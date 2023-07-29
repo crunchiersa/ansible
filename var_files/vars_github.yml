@@ -1,0 +1,7 @@
+---
+- ansible_path: /Users/martin/ansible                         # CHANGE ME - set path to ansible-root-folder
+- user: user                                                  # CHANGE ME - user to be created on server
+- group: group                                                # CHANGE ME - group to be created on server
+- password: Hashed Password for Linux                         # CHANGE ME - Use mkpasswd --method=sha-512  to create password hash.
+- dotfile_repo: https://github.com/crunchiersa/dotfiles.git   # CHANGE ME - Set URL to Repo to use for dotfile - install
+- admgroup: admgroup                                          # CHANGE ME - set name of admin group - needs to be the same as in 99_wheel file

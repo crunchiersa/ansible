@@ -2,10 +2,10 @@ all:
   children:
     new:
       vars:
-        ansible_user: user  # CHANGE ME
-        ansible_become_pass: password # CHANGE ME
-        ansible_ssh_common_args: "-J JUMPHOST" # CHANGE ME - if jumphost is necessary - jumphost needs to be defined in ~/.ssh/config
+        ansible_user: user                      # CHANGE ME
+        ansible_become_pass: password           # CHANGE ME
+        ansible_ssh_common_args: "-J JUMPHOST"  # CHANGE ME - if jumphost is necessary - jumphost needs to be defined in ~/.ssh/config
       hosts:
         newclient:
-          ansible_host: newhost.example.com
+          ansible_host: newhost.example.com     # CHANGE ME - set to FQDN or IP of client.
 
