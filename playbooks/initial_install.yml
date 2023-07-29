@@ -19,42 +19,17 @@
         update_cache: yes
       when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
 
-    - name: create user
-      become: yes
-      ansible.builtin.user:
-        name: '{{ user }}'
-        state: present
-        shell: /bin/bash
-        groups: '{{ admgroup }}'
-        append: yes
-        password: '{{ password }}'
-
-    - name: create .ssh folder in user-home
-      become: yes
-      become_user: '{{ user }}'
-      ansible.builtin.file:
-        path: '/home/{{ user }}/.ssh'
-        state: directory
-
-    - name: create bin folder in user-home
-      become: yes
-      become_user: '{{ user }}'
-      ansible.builtin.file:
-        path: '/home/{{ user }}/bin'
-        state: directory
-
     - name: create bin folder in root-home
       become: yes
       ansible.builtin.file:
         path: /root/bin
         state: directory
 
-    - name: create .bashrc in root-home
+    - name: create .ssh folder in root-home
       become: yes
       ansible.builtin.file:
-        path: /root/.bashrc
-        state: touch
-        mode: u+rwx,g+rwx,o-rwx
+        path: /root/.ssh
+        state: directory
 
   tasks:
     - name: install necessary packages archlinux
@@ -94,6 +69,30 @@
           - zsh
       when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
     
+    - name: create user
+      become: yes
+      ansible.builtin.user:
+        name: '{{ user }}'
+        state: present
+        shell: /bin/bash
+        groups: '{{ admgroup }}'
+        append: yes
+        password: '{{ password }}'
+
+    - name: create .ssh folder in user-home
+      become: yes
+      become_user: '{{ user }}'
+      ansible.builtin.file:
+        path: '/home/{{ user }}/.ssh'
+        state: directory
+
+    - name: create bin folder in user-home
+      become: yes
+      become_user: '{{ user }}'
+      ansible.builtin.file:
+        path: '/home/{{ user }}/bin'
+        state: directory
+
     - name: "chsh for user"
       become: yes
       shell: chsh {{ user }} -s /bin/zsh
@@ -106,7 +105,7 @@
       become: yes
       become_user: '{{ user }}'
       ansible.builtin.stat:
-        path: '/home/{{ user }}/.bashrc.dtbak'
+        path: '/home/{{ user }}/dotfiles/version.installed'
       register: dotfiles
 
     - name: notify dotfiles
@@ -129,7 +128,7 @@
     - name: check if dotfiles are installed for root.
       become: yes
       ansible.builtin.stat:
-        path: /root/.bashrc.dtbak
+        path: /root/dotfiles/version.installed
       register: dotfilesroot
 
     - name: notify dotfiles for root
