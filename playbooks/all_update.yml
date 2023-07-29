@@ -1,0 +1,4 @@
+---
+- import_playbook: arch_update.yml
+- import_playbook: debian_update.yml
+- import_playbook: localhost_update.yml

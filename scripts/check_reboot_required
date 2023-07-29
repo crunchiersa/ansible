@@ -1,0 +1,72 @@
+#!/bin/bash
+##AUTHOR: crunchie
+##DATE: 20.10.2022
+##check_reboot_required - check if a reboot is required for arch
+##Version: 1.0
+
+#################
+##  FUNCTIONS  ##
+#################
+
+check_root () {
+# Check if executing User is root, if not --> exit with error!
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+}
+
+check_param() {
+    if [ -z "$param1" ]; then
+        echo "Please pass a parameter. Possible parameters are:
+                * daily
+                * weekly
+                * monthly"
+        exit 1
+    fi
+}
+
+
+#######################
+## DECLARE VARIABLES ##
+#######################
+
+os=$(cat /etc/os-release | grep ID= | cut -d "=" -f2 | head -1)
+today_time=$(date +'%Y-%m-%d_%H-%M')
+ltskernel=$(uname -mrs | awk '{ print $2 }' | tail -c 4 | head -c 3)
+curkernel=unknown
+instkernel=notchecked
+
+###################
+## EXECUTE PHASE ##
+###################
+
+check_root
+
+#if [ "$os" == "arch" ]; then
+#	if [ -f /boot/vmlinuz-linux-lts ]; then
+#		instkernel=$(file /boot/vmlinuz-linux-lts | awk '{ print $9 }')
+#		curkernel=$(uname -mrs | awk '{ print $2}')
+#	elif [ -f /boot/vmlinuz-linux ]; then
+#		instkernel=$(file /boot/vmlinuz-linux | awk '{ print $9 }')
+#		curkernel=$(uname -mrs | awk '{ print $2}')
+#	fi
+#fi
+
+if [ "$os" == "arch" ]; then
+	if [ $ltskernel == "lts" ]; then
+		instkernel=$(file /boot/vmlinuz-linux-lts | awk '{ print $9 }')
+		curkernel=$(uname -mrs | awk '{ print $2}')
+	else
+		instkernel=$(file /boot/vmlinuz-linux | awk '{ print $9 }')
+		curkernel=$(uname -mrs | awk '{ print $2}')
+	fi
+fi
+
+if [ "$curkernel" == "$instkernel" ]; then
+	printf "no reboot required"
+else
+	touch /var/run/reboot_required
+fi
+
+exit 0

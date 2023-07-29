@@ -1,0 +1,25 @@
+- name: All debian-based hosts update
+  hosts: debian raspbian virtual_online
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: update
+      ansible.builtin.apt:
+        update_cache: yes
+    - name: upgrade
+      ansible.builtin.apt:
+        upgrade: full
+
+    - name: register reboot
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required_file
+
+    - name: reboot when required
+      ansible.builtin.reboot:
+      when: reboot_required_file.stat.exists == true
+
+    - name: autoremove
+      ansible.builtin.apt:
+        autoremove: yes

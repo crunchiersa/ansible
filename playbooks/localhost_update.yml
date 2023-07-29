@@ -1,0 +1,11 @@
+---
+- name: All arch hosts update
+  hosts: local
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - name: full system upgrade
+      ansible.builtin.pacman:
+        update_cache: yes
+        upgrade: yes
