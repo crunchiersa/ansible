@@ -1,39 +1,40 @@
 ---
 - name: Initial setup for new host
   hosts: new
-  gather_facts: yes
+  gather_facts: true
 
   vars_files:
     - /Users/martin/ansible/var_files/vars.yml
 
   pre_tasks:
-    - name: Update cache archlinux
-      become: yes
-      ansible.builtin.pacman:
-        update_cache: yes
-      when: ansible_distribution == "Archlinux"
+    - block:
+        - name: Update cache archlinux
+          become: true
+          ansible.builtin.pacman:
+            update_cache: yes
+          when: ansible_distribution == "Archlinux"
 
-    - name: Update cache debian/ubuntu
-      become: yes
-      ansible.builtin.apt:
-        update_cache: yes
-      when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
+        - name: Update cache debian/ubuntu
+          become: true
+          ansible.builtin.apt:
+            update_cache: yes
+          when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
 
-    - name: create bin folder in root-home
-      become: yes
-      ansible.builtin.file:
-        path: /root/bin
-        state: directory
+        - name: create bin folder in root-home
+          become: true
+          ansible.builtin.file:
+            path: /root/bin
+            state: directory
 
-    - name: create .ssh folder in root-home
-      become: yes
-      ansible.builtin.file:
-        path: /root/.ssh
-        state: directory
+        - name: create .ssh folder in root-home
+          become: true
+          ansible.builtin.file:
+            path: /root/.ssh
+            state: directory
 
   tasks:
     - name: install necessary packages archlinux
-      become: yes
+      become: true
       ansible.builtin.pacman:
         state: latest
         name:
@@ -57,7 +58,7 @@
       when: ansible_distribution == "Archlinux"
 
     - name: install necessary packages debian/ubuntu
-      become: yes
+      become: true
       ansible.builtin.apt:
         state: latest
         name:
@@ -74,7 +75,7 @@
       when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
     
     - name: create user
-      become: yes
+      become: true
       ansible.builtin.user:
         name: '{{ user }}'
         state: present
@@ -84,29 +85,29 @@
         password: '{{ password }}'
 
     - name: create .ssh folder in user-home
-      become: yes
+      become: true
       become_user: '{{ user }}'
       ansible.builtin.file:
         path: '/home/{{ user }}/.ssh'
         state: directory
 
     - name: create bin folder in user-home
-      become: yes
+      become: true
       become_user: '{{ user }}'
       ansible.builtin.file:
         path: '/home/{{ user }}/bin'
         state: directory
 
     - name: "chsh for user"
-      become: yes
+      become: true
       shell: chsh {{ user }} -s /bin/zsh
 
     - name: "chsh for root"
-      become: yes
+      become: true
       shell: chsh -s /bin/zsh
 
     - name: check if dotfiles are installed.
-      become: yes
+      become: true
       become_user: '{{ user }}'
       ansible.builtin.stat:
         path: '/home/{{ user }}/dotfiles/version.installed'
@@ -118,7 +119,7 @@
       when: dotfiles.stat.exists == False
 
     - name: check if .oh-my-zsh installed.
-      become: yes
+      become: true
       become_user: '{{ user }}'
       ansible.builtin.stat:
         path: '/home/{{ user }}/.oh-my-zsh'
@@ -130,7 +131,7 @@
       when: ohmyzsh.stat.exists == False
 
     - name: check if dotfiles are installed for root.
-      become: yes
+      become: true
       ansible.builtin.stat:
         path: /root/dotfiles/version.installed
       register: dotfilesroot
@@ -141,7 +142,7 @@
       when: dotfilesroot.stat.exists == False
 
     - name: check if .oh-my-zsh installed for root.
-      become: yes
+      become: true
       ansible.builtin.stat:
         path: /root/.oh-my-zsh
       register: ohmyzshroot
@@ -156,7 +157,7 @@
       notify: wireguard
 
     - name: check if visudo file exists
-      become: yes
+      become: true
       ansible.builtin.stat:
         path: /etc/sudoers.d/99_wheel
       register: visudo
@@ -167,7 +168,7 @@
       when: visudo.stat.exists == False
 
     - name: copy authorized_keys
-      become: yes
+      become: true
       become_user: '{{ user }}'
       copy:
         src: ../files/authorized_keys
@@ -190,14 +191,14 @@
       when: sshd_file is changed
 
     - name: check systemd-timesyncd is started
-      become: yes
+      become: true
       ansible.builtin.systemd:
         state: started
         enabled: true
         name: systemd-timesyncd
 
     - name: check cronie is started
-      become: yes
+      become: true
       ansible.builtin.systemd:
         state: started
         enabled: true
@@ -205,14 +206,14 @@
       when: ansible_distribution == "Archlinux"
 
     - name: check qemu-guest-agent is started
-      become: yes
+      become: true
       ansible.builtin.systemd:
         state: started
         enabled: true
         name: qemu-guest-agent
 
     - name: check reflector-timer is enabled
-      become: yes
+      become: true
       ansible.builtin.systemd:
         state: started
         enabled: true
@@ -220,42 +221,42 @@
       when: ansible_distribution == "Archlinux"
 
     - name: full system upgrade archlinux
-      become: yes
+      become: true
       ansible.builtin.pacman:
         upgrade: yes
       when: ansible_distribution == "Archlinux"
 
     - name: full system upgrade debian/ubuntu
-      become: yes
+      become: true
       ansible.builtin.apt:
         upgrade: dist
       when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
 
     - name: check if reboot required
-      become: yes
+      become: true
       ansible.builtin.script:
         cmd: '{{ ansible_path }}/scripts/check_reboot_required'
       when: ansible_distribution == "Archlinux"
 
     - name: register reboot
-      become: yes
+      become: true
       ansible.builtin.stat:
         path: /var/run/reboot_required
       notify: reboot when required
 
   handlers:
     - name: restart sshd
-      become: yes
+      become: true
       service:
         name: sshd
         state: restarted
 
     - name: reboot when required
-      become: yes
+      become: true
       ansible.builtin.reboot:
 
     - name: Clone dotfile-repo
-      become: yes
+      become: true
       become_user: '{{ user }}'
       ansible.builtin.git:
         repo: '{{ dotfile_repo }}'
@@ -267,7 +268,7 @@
       listen: "dotfiles"
 
     - name: set correct owner and mode of dotfiles
-      become: yes
+      become: true
       ansible.builtin.file:
         path: '/home/{{ user }}/dotfiles'
         owner: '{{ user }}'
@@ -277,33 +278,33 @@
       listen: "dotfiles"
 
     - name: set correct owner and mode of dotfiles-install
-      become: yes
+      become: true
       ansible.builtin.file:
         path: '/home/{{ user }}/dotfiles/install.sh'
         mode: '0744'
       listen: "dotfiles"
 
     - name: set correct owner and mode of dotfiles-uninstall
-      become: yes
+      become: true
       ansible.builtin.file:
         path: '/home/{{ user }}/dotfiles/uninstall.sh'
         mode: '0744'
       listen: "dotfiles"
     
     - name: "install .oh-my-zsh"
-      become: yes
+      become: true
       become_user: '{{ user }}'
       shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
       listen: "ohmyzsh"
 
     - name: execute dotfiles-install
-      become: yes
+      become: true
       become_user: '{{ user }}'
       command: bash '/home/{{ user }}/dotfiles/install.sh'
       listen: "dotfiles"
 
     - name: Clone dotfile-repo root
-      become: yes
+      become: true
       ansible.builtin.git:
         repo: '{{ dotfile_repo }}'
         dest: '/root/dotfiles'
@@ -313,12 +314,12 @@
       listen: "dotfilesroot"
 
     - name: "install .oh-my-zsh root"
-      become: yes
+      become: true
       shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
       listen: "ohmyzshroot"
 
     - name: clone wireguard into local folder
-      become: yes
+      become: true
       ansible.builtin.git:
         repo: 'https://github.com/crunchiersa/wireguard-setup-script.git'
         dest: /etc/wireguard
@@ -327,12 +328,12 @@
       listen: "wireguard"
 
     - name: execute dotfiles-install
-      become: yes
+      become: true
       command: bash /root/dotfiles/install.sh
       listen: "dotfilesroot"
 
     - name: copy sshd_config
-      become: yes
+      become: true
       copy:
         src: ../files/sshd_config
         dest: /etc/ssh
@@ -342,7 +343,7 @@
       notify: restart sshd
 
     - name: copy visudo-file
-      become: yes
+      become: true
       copy:
         src: ../files/99_wheel
         dest: /etc/sudoers.d
