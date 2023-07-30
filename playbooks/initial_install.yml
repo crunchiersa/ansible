@@ -151,6 +151,10 @@
       notify: ohmyzshroot
       when: ohmyzshroot.stat.exists == False
 
+    - name: notify wireguard
+      ansible.builtin.command: echo "wireguard repo will be cloned"
+      notify: wireguard
+
     - name: check if visudo file exists
       become: yes
       ansible.builtin.stat:
@@ -171,11 +175,6 @@
         owner: '{{ user }}'
         group: '{{ group }}'
         mode: 0600
-
-    - name: notify authorized_keys
-      ansible.builtin.command: echo "authorized_keys will be installed"
-      notify: copy authorized_keys
-      when: auth_keys is changed
 
     - name: check if sshd_config is updated
       ansible.builtin.lineinfile:
@@ -203,6 +202,7 @@
         state: started
         enabled: true
         name: cronie
+      when: ansible_distribution == "Archlinux"
 
     - name: check qemu-guest-agent is started
       become: yes
@@ -217,6 +217,7 @@
         state: started
         enabled: true
         name: reflector.timer
+      when: ansible_distribution == "Archlinux"
 
     - name: full system upgrade archlinux
       become: yes
@@ -255,12 +256,14 @@
 
     - name: Clone dotfile-repo
       become: yes
+      become_user: '{{ user }}'
       ansible.builtin.git:
         repo: '{{ dotfile_repo }}'
         dest: '/home/{{ user }}/dotfiles'
         single_branch: yes
         version: master
         force: yes
+        clone: true
       listen: "dotfiles"
 
     - name: set correct owner and mode of dotfiles
@@ -314,6 +317,15 @@
       shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
       listen: "ohmyzshroot"
 
+    - name: clone wireguard into local folder
+      become: yes
+      ansible.builtin.git:
+        repo: 'https://github.com/crunchiersa/wireguard-setup-script.git'
+        dest: /etc/wireguard
+        clone: yes
+        update: yes
+      listen: "wireguard"
+
     - name: execute dotfiles-install
       become: yes
       command: bash /root/dotfiles/install.sh
@@ -338,4 +350,4 @@
         group: root
         mode: 0644
       listen: "visudo"
-
+      

@@ -19,6 +19,61 @@
         update_cache: yes
       when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
 
+    - name: create bin folder in root-home
+      become: yes
+      ansible.builtin.file:
+        path: /root/bin
+        state: directory
+
+    - name: create .ssh folder in root-home
+      become: yes
+      ansible.builtin.file:
+        path: /root/.ssh
+        state: directory
+
+  tasks:
+    - name: install necessary packages archlinux
+      become: yes
+      ansible.builtin.pacman:
+        state: latest
+        name:
+          - base-devel
+          - cronie
+          - qemu-guest-agent
+          - git
+          - vim
+          - cifs-utils
+          - rsnapshot
+          - tmux
+          - net-tools
+          - dnsutils
+          - sudo
+          - bash-completion
+          - reflector
+          - pacman-contrib
+          - zsh
+          - wireguard-tools
+          - qrencode
+      when: ansible_distribution == "Archlinux"
+
+    - name: install necessary packages debian/ubuntu
+      become: yes
+      ansible.builtin.apt:
+        state: latest
+        name:
+          - qemu-guest-agent
+          - git
+          - vim
+          - rsnapshot
+          - tmux
+          - sudo
+          - bash-completion
+          - zsh
+          - wireguard
+          - qrencode
+          - curl
+      when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
+    
     - name: create user
       become: yes
       ansible.builtin.user:
@@ -43,60 +98,8 @@
         path: '/home/{{ user }}/bin'
         state: directory
 
-    - name: create bin folder in root-home
-      become: yes
-      ansible.builtin.file:
-        path: /root/bin
-        state: directory
-
-    - name: create .bashrc in root-home
-      become: yes
-      ansible.builtin.file:
-        path: /root/.bashrc
-        state: touch
-        mode: u+rwx,g+rwx,o-rwx
-
-  tasks:
-    - name: install necessary packages archlinux
-      become: yes
-      ansible.builtin.pacman:
-        state: latest
-        name:
-          - base-devel
-          - cronie
-          - qemu-guest-agent
-          - git
-          - vim
-          - cifs-utils
-          - rsnapshot
-          - tmux
-          - net-tools
-          - dnsutils
-          - sudo
-          - bash-completion
-          - reflector
-          - pacman-contrib
-          - zsh
-      when: ansible_distribution == "Archlinux"
-
-    - name: install necessary packages debian/ubuntu
-      become: yes
-      ansible.builtin.apt:
-        state: latest
-        name:
-          - qemu-guest-agent
-          - git
-          - vim
-          - rsnapshot
-          - tmux
-          - sudo
-          - bash-completion
-          - zsh
-      when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
-
     - name: "chsh for user"
       become: yes
-      become_user: '{{ user }}'
       shell: chsh {{ user }} -s /bin/zsh
 
     - name: "chsh for root"
@@ -107,7 +110,7 @@
       become: yes
       become_user: '{{ user }}'
       ansible.builtin.stat:
-        path: '/home/{{ user }}/.bashrc.dtbak'
+        path: '/home/{{ user }}/dotfiles/version.installed'
       register: dotfiles
 
     - name: notify dotfiles
@@ -130,7 +133,7 @@
     - name: check if dotfiles are installed for root.
       become: yes
       ansible.builtin.stat:
-        path: /root/.bashrc.dtbak
+        path: /root/dotfiles/version.installed
       register: dotfilesroot
 
     - name: notify dotfiles for root
@@ -149,6 +152,10 @@
       notify: ohmyzshroot
       when: ohmyzshroot.stat.exists == False
 
+    - name: notify wireguard
+      ansible.builtin.command: echo "wireguard repo will be cloned"
+      notify: wireguard
+
     - name: check if visudo file exists
       become: yes
       ansible.builtin.stat:
@@ -160,23 +167,15 @@
       notify: visudo
       when: visudo.stat.exists == False
 
-    - name: check if authorized_keys exists
-      ansible.builtin.lineinfile:
-        path: '/home/{{ user }}/.ssh/authorized_keys'
-        line: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOENWZu2H/BGA/xTpUGjRk/dVwa1iHqbhR1HOTX9r0UV ansible-testkey
-          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICwRxyU5ckndzi4GcgZI46MeRViY7MugZY0jhX/E9DSS martin@vmwareclients
-          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIACeu6af+LKhZHiNRp9QxCRssEPOrnKWhk8M0HbCgfcF martin@vmansible
-          ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIZDIj8iqV6mrs2yUNWvSVKdC1rCP7pErAgN0muMFE3R crunchie-fp3+
-          ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDcB4QpLYIwWl8xp8kFPPNXtzzVKekxrfYXCEJmVZ5spd32+0g18m2D/ZXuObn7L8F4ZW+6eGzw1zsj1pdSbTTckQMHH6gXeWr0QtQaZrVCG5KUQ3vmLXNciWmnZQBUCImZmS7AiJB9VnIK+CydbIk1nTFyqB9GJqggdR4oqy/2KuI3uf2nAhCpzFZgdhBGERjJzb+Qw18EPnlWE/KCxBBcOG5oJKPvQ4/GNrpeB4zwm6rsRdQaSdl+NKtCz+x4Sp8v9cobifBXzFzsZcwZtA04j5GOjZOQwDhJt5FFkL2Mm3nD0H7BasLtmKNRAOM56bA7A1CT7flUJaow1GVllXIVLCPLFbUaSGqMp8dmnHC1qLQyLv1PxDRmP1n39a5oe52Kq7k64/Vz2A3OIUCGiTuwaQtwHl/ZASOaRz92/ZZfxVHFZn1wqtXriF10IfJ7+Le+YYjLbly7inm7LqXSzj6QVdyvH5N8tBu1p65F1oviK7ELsmBnT97uvHdrTjpwJjVmmLC+/vN5bGq1BsoN3XgOMmmjtbMRFv916yAD+wpHy/hsB/jjKoGYKn1MsgWEC5UNu0pWj8bch+EhKBgH3Vb/KoS9OkPINvbZBYpXIbfh8sCiSmM5EQy1mlcDnsKN86tIdcvNsEOMOdS+zIcJw1wA+QX5J4m7FUIetS6q9F8rSw== guacamole"
-        state: present
-        create: yes
-      check_mode: yes
-      register: auth_keys
-
-    - name: notify authorized_keys
-      ansible.builtin.command: echo "authorized_keys will be installed"
-      notify: copy authorized_keys
-      when: auth_keys is changed
+    - name: copy authorized_keys
+      become: yes
+      become_user: '{{ user }}'
+      copy:
+        src: ../files/authorized_keys
+        dest: '/home/{{ user }}/.ssh'
+        owner: '{{ user }}'
+        group: '{{ group }}'
+        mode: 0600
 
     - name: check if sshd_config is updated
       ansible.builtin.lineinfile:
@@ -204,6 +203,7 @@
         state: started
         enabled: true
         name: cronie
+      when: ansible_distribution == "Archlinux"
 
     - name: check qemu-guest-agent is started
       become: yes
@@ -218,6 +218,7 @@
         state: started
         enabled: true
         name: reflector.timer
+      when: ansible_distribution == "Archlinux"
 
     - name: full system upgrade archlinux
       become: yes
@@ -235,6 +236,7 @@
       become: yes
       ansible.builtin.script:
         cmd: '{{ ansible_path }}/scripts/check_reboot_required'
+      when: ansible_distribution == "Archlinux"
 
     - name: register reboot
       become: yes
@@ -255,12 +257,14 @@
 
     - name: Clone dotfile-repo
       become: yes
+      become_user: '{{ user}}'
       ansible.builtin.git:
         repo: '{{ dotfile_repo }}'
         dest: '/home/{{ user }}/dotfiles'
         single_branch: yes
         version: master
         force: yes
+        clone: true
       listen: "dotfiles"
 
     - name: set correct owner and mode of dotfiles
@@ -286,7 +290,7 @@
         path: '/home/{{ user }}/dotfiles/uninstall.sh'
         mode: '0744'
       listen: "dotfiles"
-
+    
     - name: "install .oh-my-zsh"
       become: yes
       become_user: '{{ user }}'
@@ -314,20 +318,19 @@
       shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
       listen: "ohmyzshroot"
 
+    - name: clone wireguard into local folder
+      become: yes
+      ansible.builtin.git:
+        repo: 'https://github.com/crunchiersa/wireguard-setup-script.git'
+        dest: /etc/wireguard
+        clone: yes
+        update: yes
+      listen: "wireguard"
+
     - name: execute dotfiles-install
       become: yes
       command: bash /root/dotfiles/install.sh
       listen: "dotfilesroot"
-
-    - name: copy authorized_keys
-      become: yes
-      become_user: '{{ user }}'
-      copy:
-        src: ../files/authorized_keys
-        dest: '/home/{{ user }}/.ssh'
-        owner: '{{ user }}'
-        group: '{{ group }}'
-        mode: 0600
 
     - name: copy sshd_config
       become: yes
@@ -348,4 +351,4 @@
         group: root
         mode: 0644
       listen: "visudo"
-
+      
