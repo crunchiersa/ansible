@@ -72,6 +72,7 @@
           - zsh
           - wireguard
           - qrencode
+          - curl
       when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
     
     - name: create user
