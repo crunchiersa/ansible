@@ -52,6 +52,8 @@
           - reflector
           - pacman-contrib
           - zsh
+          - wireguard-tools
+          - qrencode
       when: ansible_distribution == "Archlinux"
 
     - name: install necessary packages debian/ubuntu
@@ -67,6 +69,8 @@
           - sudo
           - bash-completion
           - zsh
+          - wireguard
+          - qrencode
       when: (ansible_distribution == "Debian" ) or (ansible_distribution == "Ubuntu")
     
     - name: create user
