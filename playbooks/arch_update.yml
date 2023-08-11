@@ -1,8 +1,8 @@
 ---
 - name: All arch hosts update
   hosts: arch
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   tasks:
     - name: full system upgrade

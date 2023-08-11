@@ -1,7 +1,7 @@
 - name: All debian-based hosts update
   hosts: debian raspbian virtual_online
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   tasks:
     - name: update
